@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+use crate::icmp::handle_icmp;
 use crate::netinet::{ip, IPPROTO_ICMP};
 use crate::tun::TunContext;
 
@@ -20,8 +21,8 @@ pub async fn handle_ip(tun: &TunContext) -> Result<()> {
 }
 
 pub async fn handle_ipv4(tun: &TunContext, ip: &ip) -> Result<()> {
-    match ip.ip_p.try_into()? {
-        IPPROTO_ICMP => tun.log(format!("Got ICMP")),
+    match ip.ip_p as u32 {
+        IPPROTO_ICMP => handle_icmp(tun, ip).await?,
         _ => (),
     };
     Ok(())

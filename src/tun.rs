@@ -1,4 +1,4 @@
-use std::mem::size_of;
+use std::{mem::size_of, os::unix::io::AsRawFd};
 
 use anyhow::Result;
 use tokio_tun::Tun;
@@ -20,12 +20,10 @@ unsafe impl Sync for TunContext {}
 impl TunContext {
     pub fn new(tun: Tun, queue: usize) -> Result<Self> {
         let buffer: Box<[u8]> = unsafe {
-            Box::try_new_uninit_slice(
-                <i32 as TryInto<usize>>::try_into(tun.mtu().unwrap())? + REVERSE_BUFFER_HEADER,
-            )?
-            .assume_init()
+            Box::try_new_uninit_slice(tun.mtu().unwrap() as usize + REVERSE_BUFFER_HEADER)?
+                .assume_init()
         };
-        let recv_buf = unsafe { buffer.as_ptr().offset(REVERSE_BUFFER_HEADER.try_into()?) };
+        let recv_buf = unsafe { buffer.as_ptr().offset(REVERSE_BUFFER_HEADER as isize) };
         Ok(Self {
             tun,
             queue,
@@ -39,7 +37,7 @@ impl TunContext {
     }
 
     pub async fn handle(mut self) -> Result<()> {
-        self.log(format!("Poll"));
+        self.log(format!("Polling with fd {}", self.tun.as_raw_fd()));
         loop {
             let size = self
                 .tun
