@@ -4,4 +4,5 @@
 
 pub mod config;
 pub mod ip;
+pub mod netinet;
 pub mod tun;

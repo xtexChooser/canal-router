@@ -3,7 +3,7 @@ use std::mem::size_of;
 use anyhow::Result;
 use tokio_tun::Tun;
 
-use crate::ip;
+use crate::{ip::handle_ip, netinet};
 
 pub const REVERSE_BUFFER_HEADER: usize = 64;
 
@@ -34,7 +34,7 @@ impl TunContext {
         })
     }
 
-    fn log(&self, text: String) {
+    pub fn log(&self, text: String) {
         println!("[{}] {}", self.queue, text)
     }
 
@@ -45,11 +45,10 @@ impl TunContext {
                 .tun
                 .recv(&mut self.buffer[REVERSE_BUFFER_HEADER..])
                 .await?;
-            if size <= size_of::<ip::ip>() {
+            if size <= size_of::<netinet::ip>() {
                 self.log(format!("Received packet with too small size {}", size));
             } else {
-                self.log(format!("Received packet {}", size));
-                //self.handle_ip().await?;
+                handle_ip(&self).await?;
             }
         }
     }
