@@ -20,8 +20,7 @@ unsafe impl Sync for TunContext {}
 impl TunContext {
     pub fn new(tun: Tun, queue: usize) -> Result<Self> {
         let buffer: Box<[u8]> = unsafe {
-            Box::try_new_uninit_slice(tun.mtu().unwrap() as usize + REVERSE_BUFFER_HEADER)?
-                .assume_init()
+            Box::new_zeroed_slice(tun.mtu().unwrap() as usize + REVERSE_BUFFER_HEADER).assume_init()
         };
         let recv_buf = unsafe { buffer.as_ptr().offset(REVERSE_BUFFER_HEADER as isize) };
         Ok(Self {
